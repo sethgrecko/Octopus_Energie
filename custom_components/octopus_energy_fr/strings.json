@@ -3,30 +3,165 @@
     "step": {
       "user": {
         "title": "Octopus Energy France",
-        "description": "Renseigne les identifiants de ton compte Octopus.",
+        "description": "Connecte-toi avec l'email et le mot de passe de ton compte Octopus Energy France.",
         "data": {
-          "api_key": "Clé API",
-          "account_id": "ID compte",
+          "email": "Adresse e-mail",
+          "password": "Mot de passe",
           "scan_interval": "Intervalle de mise à jour (minutes)"
+        }
+      },
+      "account": {
+        "title": "Choisir un compte",
+        "description": "Plusieurs comptes ont été trouvés. Sélectionne celui à configurer.",
+        "data": {
+          "account_number": "Numéro de compte"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnexion requise",
+        "description": "Le mot de passe du compte {email} a expiré ou est invalide. Entre le nouveau mot de passe.",
+        "data": {
+          "password": "Mot de passe"
         }
       }
     },
     "error": {
-      "cannot_connect": "Impossible de se connecter",
-      "invalid_auth": "Authentification invalide"
+      "invalid_auth": "Email ou mot de passe incorrect",
+      "cannot_connect": "Impossible de se connecter à l'API Octopus",
+      "no_accounts": "Aucun compte trouvé pour ces identifiants",
+      "unknown": "Erreur inattendue"
     },
     "abort": {
-      "already_configured": "Ce compte est déjà configuré"
+      "already_configured": "Ce compte est déjà configuré",
+      "reauth_successful": "Reconnexion réussie"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Options Octopus",
+        "title": "Options Octopus Energy France",
         "data": {
           "scan_interval": "Intervalle de mise à jour (minutes)"
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "contract": {
+        "name": "Type de contrat"
+      },
+      "subscribed_power": {
+        "name": "Puissance souscrite"
+      },
+      "subscription": {
+        "name": "Abonnement mensuel"
+      },
+      "energy_base": {
+        "name": "Consommation mensuelle BASE"
+      },
+      "energy_peak_hours": {
+        "name": "Consommation mensuelle HP"
+      },
+      "energy_off_peak_hours": {
+        "name": "Consommation mensuelle HC"
+      },
+      "cost_base": {
+        "name": "Coût mensuel BASE"
+      },
+      "cost_peak_hours": {
+        "name": "Coût mensuel HP"
+      },
+      "cost_off_peak_hours": {
+        "name": "Coût mensuel HC"
+      },
+      "rate_base": {
+        "name": "Tarif BASE"
+      },
+      "rate_peak_hours": {
+        "name": "Tarif Heures Pleines"
+      },
+      "rate_off_peak_hours": {
+        "name": "Tarif Heures Creuses"
+      },
+      "latest_reading": {
+        "name": "Dernier relevé"
+      },
+      "index_base": {
+        "name": "Index BASE"
+      },
+      "index_hp": {
+        "name": "Index Heures Pleines"
+      },
+      "index_hc": {
+        "name": "Index Heures Creuses"
+      },
+      "gas_consumption": {
+        "name": "Consommation gaz mensuelle"
+      },
+      "gas_cost": {
+        "name": "Coût gaz mensuel"
+      },
+      "gas_contract": {
+        "name": "Statut contrat gaz"
+      },
+      "gas_subscription": {
+        "name": "Abonnement gaz mensuel"
+      },
+      "gas_rate": {
+        "name": "Tarif gaz"
+      },
+      "credit_balance": {
+        "name": "Crédit Octopus"
+      },
+      "electricity_bill": {
+        "name": "Dernière facture électricité"
+      },
+      "gas_bill": {
+        "name": "Dernière facture gaz"
+      },
+      "vehicle_status": {
+        "name": "État de charge véhicule"
+      },
+      "weekday_target_soc": {
+        "name": "SOC cible semaine"
+      },
+      "weekday_target_time": {
+        "name": "Heure cible semaine"
+      },
+      "weekend_target_soc": {
+        "name": "SOC cible week-end"
+      },
+      "weekend_target_time": {
+        "name": "Heure cible week-end"
+      },
+      "planned_dispatches": {
+        "name": "Fenêtres de charge programmées"
+      }
+    },
+    "binary_sensor": {
+      "is_charging": {
+        "name": "En charge"
+      }
+    },
+    "switch": {
+      "boost_charge": {
+        "name": "Charge boost"
+      }
+    },
+    "number": {
+      "weekday_soc_target": {
+        "name": "SOC cible semaine"
+      },
+      "weekend_soc_target": {
+        "name": "SOC cible week-end"
+      }
+    }
+  },
+  "services": {
+    "force_update": {
+      "name": "Forcer la mise à jour",
+      "description": "Force immédiatement la récupération des données Octopus Energy."
     }
   }
 }
