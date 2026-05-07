@@ -1,0 +1,13 @@
+{
+  "domain": "octopus_energy_fr",
+  "name": "Octopus Energy France",
+  "codeowners": [
+    "@gaetan"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/domodom30/ha-octopus-french",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/domodom30/ha-octopus-french/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
