@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
 from datetime import datetime
 import logging
 from typing import Any
@@ -116,31 +115,51 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        key = self._sensor_config.key
-        if key.startswith(("energy_", "cost_")):
-            self.hass.async_create_task(self._async_import_statistics())
+        if self._sensor_config.key.startswith(("energy_", "cost_")):
+            self.hass.async_create_task(
+                self._async_import_statistics(),
+                name=f"octopus_stats_elec_{self._prm_id}_{self._sensor_config.key}",
+            )
 
     def _handle_coordinator_update(self) -> None:
-        key = self._sensor_config.key
-        if key.startswith(("energy_", "cost_")) and not self._statistics_imported:
-            self.hass.async_create_task(self._async_import_statistics())
+        if self._sensor_config.key.startswith(("energy_", "cost_")):
+            self.hass.async_create_task(
+                self._async_import_statistics(),
+                name=f"octopus_stats_elec_{self._prm_id}_{self._sensor_config.key}",
+            )
         super()._handle_coordinator_update()
 
     async def _async_import_statistics(self) -> None:
+        """Import historical statistics into HA recorder. Always safe to call."""
+        try:
+            await self._do_import_statistics()
+        except Exception as err:
+            _LOGGER.error(
+                "Statistics import failed for %s/%s: %s",
+                self._prm_id, self._sensor_config.key, err, exc_info=True,
+            )
+
+    async def _do_import_statistics(self) -> None:
         key = self._sensor_config.key
         readings = self._readings()
+
         if not readings or not self.entity_id:
+            _LOGGER.debug("Stats [%s/%s]: no readings or entity_id not set, skipping", self._prm_id, key)
             return
 
         statistic_id = f"{DOMAIN}:{self._prm_id}_{key}"
         current_month = dt_util.now().strftime("%Y-%m")
 
+        # Skip if already imported this month AND no newer readings available
         if self._statistics_imported and self._current_month == current_month:
-            return
+            latest = readings[-1].get("startAt") if readings else None
+            if latest and self._last_imported_date and latest <= self._last_imported_date:
+                _LOGGER.debug("Stats [%s/%s]: up to date, skipping", self._prm_id, key)
+                return
 
-        # Resume cumulative sum from last stored statistic after restart.
+        # Resume cumulative sum from last stored statistic
         cumulative_sum = 0.0
-        with suppress(Exception):
+        try:
             last_stats = await get_instance(self.hass).async_add_executor_job(
                 get_last_statistics, self.hass, 1, statistic_id, False, {"sum", "start"}
             )
@@ -153,6 +172,12 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
                         self._last_imported_date = datetime.fromtimestamp(
                             float(ts), tz=dt_util.UTC
                         ).isoformat()
+                _LOGGER.debug(
+                    "Stats [%s/%s]: resuming from sum=%.3f, last_date=%s",
+                    self._prm_id, key, cumulative_sum, self._last_imported_date,
+                )
+        except Exception as err:
+            _LOGGER.debug("Stats [%s/%s]: could not load last stats: %s", self._prm_id, key, err)
 
         statistics: list[StatisticData] = []
         sorted_readings = sorted(readings, key=lambda x: x.get("startAt") or "")
@@ -161,7 +186,6 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
             reading_date = reading.get("startAt")
             if not reading_date:
                 continue
-
             if self._last_imported_date and reading_date <= self._last_imported_date:
                 continue
 
@@ -177,17 +201,15 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
 
             for stat in stat_list:
                 label = stat.get("label") or ""
-                if key in _CONSUMPTION_LABEL_MAP:
-                    if label == _CONSUMPTION_LABEL_MAP[key]:
-                        val = stat.get("value")
-                        if val is not None:
-                            reading_value = float(val)
-                elif key in _COST_LABEL_MAP:
-                    if label == _COST_LABEL_MAP[key]:
-                        val = stat.get("value")
-                        rate = self._tariff_rate()
-                        if val is not None and rate:
-                            reading_value = float(val) * rate
+                if key in _CONSUMPTION_LABEL_MAP and label == _CONSUMPTION_LABEL_MAP[key]:
+                    val = stat.get("value")
+                    if val is not None:
+                        reading_value = float(val)
+                elif key in _COST_LABEL_MAP and label == _COST_LABEL_MAP[key]:
+                    val = stat.get("value")
+                    rate = self._tariff_rate()
+                    if val is not None and rate:
+                        reading_value = float(val) * rate
 
             if reading_value > 0:
                 cumulative_sum += reading_value
@@ -197,6 +219,7 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
                 self._last_imported_date = reading_date
 
         if not statistics:
+            _LOGGER.debug("Stats [%s/%s]: no new data points to import", self._prm_id, key)
             return
 
         unit_class = "energy" if key.startswith("energy_") else None
@@ -210,13 +233,18 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
             unit_of_measurement=self._attr_native_unit_of_measurement,
         )
 
-        with suppress(Exception):
+        try:
             async_add_external_statistics(self.hass, metadata, statistics)
             self._statistics_imported = True
             self._current_month = current_month
             _LOGGER.debug(
-                "Imported %d statistics for %s (last: %s)",
-                len(statistics), statistic_id, self._last_imported_date,
+                "Stats [%s/%s]: imported %d points, cumulative=%.3f, last=%s",
+                self._prm_id, key, len(statistics), cumulative_sum, self._last_imported_date,
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Stats [%s/%s]: async_add_external_statistics failed: %s",
+                self._prm_id, key, err, exc_info=True,
             )
 
     # ------------------------------------------------------------------
@@ -283,7 +311,7 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
         if key == "subscription":
             agreement = self._active_agreement() or {}
             tariffs = agreement.get("tariffs") or {}
-            subscription = (tariffs.get("subscription")) or {}
+            subscription = tariffs.get("subscription") or {}
             next_pay = agreement.get("next_payment") or {}
             return {
                 "current_month": self._current_month,
@@ -330,7 +358,7 @@ class OctopusElectricitySensor(CoordinatorEntity, SensorEntity):
     # ------------------------------------------------------------------
 
     def _calculate_monthly_subscription(self) -> float | None:
-        tariffs = (self._tariffs() or {})
+        tariffs = self._tariffs() or {}
         subscription = tariffs.get("subscription") or {}
         monthly = subscription.get("monthly_ttc_eur")
         if monthly is not None:
@@ -434,8 +462,7 @@ class OctopusLatestReadingSensor(CoordinatorEntity, SensorEntity):
         readings = self._readings()
         if not readings:
             return None
-        reading = readings[-1]
-        val = reading.get("value")
+        val = readings[-1].get("value")
         return float(val) if val is not None else None
 
     @property
@@ -461,11 +488,10 @@ class OctopusLatestReadingSensor(CoordinatorEntity, SensorEntity):
                 attributes["heures_pleines_kwh"] = float(value) if value is not None else None
             elif label == "HEURES_CREUSES":
                 attributes["heures_creuses_kwh"] = float(value) if value is not None else None
-            elif label == "ABONNEMENT" and cost:
+            elif label == "ABONNEMENT":
                 amount = cost.get("estimatedAmount")
                 attributes["cout_abonnement_euro"] = float(amount) / 100 if amount is not None else None
 
-        # Derive costs from consumption × tariff rate
         elec_data = (self.coordinator.data or {}).get("electricity", {}).get(self._prm_id, {})
         tariffs_consumption = (elec_data.get("tariffs") or {}).get("consumption") or {}
         for kwh_key, label, rate_key in (

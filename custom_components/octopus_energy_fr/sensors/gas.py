@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
 from datetime import datetime
 import logging
 from typing import Any
@@ -98,26 +97,49 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         if self._sensor_config.key == "gas_consumption":
-            self.hass.async_create_task(self._async_import_statistics())
+            self.hass.async_create_task(
+                self._async_import_statistics(),
+                name=f"octopus_stats_gas_{self._pce_ref}",
+            )
 
     def _handle_coordinator_update(self) -> None:
-        if self._sensor_config.key == "gas_consumption" and not self._statistics_imported:
-            self.hass.async_create_task(self._async_import_statistics())
+        if self._sensor_config.key == "gas_consumption":
+            self.hass.async_create_task(
+                self._async_import_statistics(),
+                name=f"octopus_stats_gas_{self._pce_ref}",
+            )
         super()._handle_coordinator_update()
 
     async def _async_import_statistics(self) -> None:
+        """Import historical gas statistics. Always safe to call."""
+        try:
+            await self._do_import_statistics()
+        except Exception as err:
+            _LOGGER.error(
+                "Statistics import failed for gas/%s: %s",
+                self._pce_ref, err, exc_info=True,
+            )
+
+    async def _do_import_statistics(self) -> None:
         readings = self._readings()
+
         if not readings or not self.entity_id:
+            _LOGGER.debug("Stats [gas/%s]: no readings or entity_id not set, skipping", self._pce_ref)
             return
 
         statistic_id = f"{DOMAIN}:{self._pce_ref}_gas_consumption"
         current_month = dt_util.now().strftime("%Y-%m")
 
+        # Skip if already imported this month AND no newer readings available
         if self._statistics_imported and self._current_month == current_month:
-            return
+            latest = readings[-1].get("startAt") if readings else None
+            if latest and self._last_imported_date and latest <= self._last_imported_date:
+                _LOGGER.debug("Stats [gas/%s]: up to date, skipping", self._pce_ref)
+                return
 
+        # Resume cumulative sum from last stored statistic
         cumulative_sum = 0.0
-        with suppress(Exception):
+        try:
             last_stats = await get_instance(self.hass).async_add_executor_job(
                 get_last_statistics, self.hass, 1, statistic_id, False, {"sum", "start"}
             )
@@ -130,6 +152,12 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
                         self._last_imported_date = datetime.fromtimestamp(
                             float(ts), tz=dt_util.UTC
                         ).isoformat()
+                _LOGGER.debug(
+                    "Stats [gas/%s]: resuming from sum=%.3f, last_date=%s",
+                    self._pce_ref, cumulative_sum, self._last_imported_date,
+                )
+        except Exception as err:
+            _LOGGER.debug("Stats [gas/%s]: could not load last stats: %s", self._pce_ref, err)
 
         statistics: list[StatisticData] = []
         sorted_readings = sorted(readings, key=lambda x: x.get("startAt") or "")
@@ -162,6 +190,7 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
             self._last_imported_date = reading_date
 
         if not statistics:
+            _LOGGER.debug("Stats [gas/%s]: no new data points to import", self._pce_ref)
             return
 
         metadata = StatisticMetaData(
@@ -174,12 +203,18 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
             unit_of_measurement=self._attr_native_unit_of_measurement,
         )
 
-        with suppress(Exception):
+        try:
             async_add_external_statistics(self.hass, metadata, statistics)
             self._statistics_imported = True
             self._current_month = current_month
             _LOGGER.debug(
-                "Imported %d gas statistics for %s", len(statistics), statistic_id
+                "Stats [gas/%s]: imported %d points, cumulative=%.3f, last=%s",
+                self._pce_ref, len(statistics), cumulative_sum, self._last_imported_date,
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Stats [gas/%s]: async_add_external_statistics failed: %s",
+                self._pce_ref, err, exc_info=True,
             )
 
     # ------------------------------------------------------------------
