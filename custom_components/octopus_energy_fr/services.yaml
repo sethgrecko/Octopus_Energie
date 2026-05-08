@@ -1,0 +1,3 @@
+force_update:
+  name: Forcer la mise à jour
+  description: Force immédiatement la récupération des données Octopus Energy France pour toutes les intégrations configurées.
