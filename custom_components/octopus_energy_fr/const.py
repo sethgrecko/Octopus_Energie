@@ -2,8 +2,6 @@
 
 DOMAIN = "octopus_energy_fr"
 
-CONF_EMAIL = "email"
-CONF_PASSWORD = "password"
 CONF_ACCOUNT_NUMBER = "account_number"
 CONF_SCAN_INTERVAL = "scan_interval"
 

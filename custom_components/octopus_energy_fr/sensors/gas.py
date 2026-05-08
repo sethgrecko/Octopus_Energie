@@ -130,15 +130,18 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
         statistic_id = f"{DOMAIN}:{self._pce_ref}_gas_consumption"
         current_month = dt_util.now().strftime("%Y-%m")
 
-        # Skip if already imported this month AND no newer readings available
+        # Fast path: skip if already imported this month and no newer readings
         if self._statistics_imported and self._current_month == current_month:
             latest = readings[-1].get("startAt") if readings else None
             if latest and self._last_imported_date and latest <= self._last_imported_date:
                 _LOGGER.debug("Stats [gas/%s]: up to date, skipping", self._pce_ref)
                 return
 
-        # Resume cumulative sum from last stored statistic
+        # Resume cumulative sum from last stored statistic.
+        # Store the DB's last-start as a proper UTC datetime to avoid timezone
+        # string-comparison issues when reading_date is a date-only string.
         cumulative_sum = 0.0
+        last_start_dt: datetime | None = None
         try:
             last_stats = await get_instance(self.hass).async_add_executor_job(
                 get_last_statistics, self.hass, 1, statistic_id, False, {"sum", "start"}
@@ -146,15 +149,12 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
             if last_stats and last_stats.get(statistic_id):
                 entry = last_stats[statistic_id][0]
                 cumulative_sum = float(entry.get("sum") or 0.0)
-                if not self._last_imported_date:
-                    ts = entry.get("start")
-                    if ts is not None:
-                        self._last_imported_date = datetime.fromtimestamp(
-                            float(ts), tz=dt_util.UTC
-                        ).isoformat()
+                ts = entry.get("start")
+                if ts is not None:
+                    last_start_dt = datetime.fromtimestamp(float(ts), tz=dt_util.UTC)
                 _LOGGER.debug(
-                    "Stats [gas/%s]: resuming from sum=%.3f, last_date=%s",
-                    self._pce_ref, cumulative_sum, self._last_imported_date,
+                    "Stats [gas/%s]: resuming from sum=%.3f, last_start=%s",
+                    self._pce_ref, cumulative_sum, last_start_dt,
                 )
         except Exception as err:
             _LOGGER.debug("Stats [gas/%s]: could not load last stats: %s", self._pce_ref, err)
@@ -166,14 +166,16 @@ class OctopusGasSensor(CoordinatorEntity, SensorEntity):
             reading_date = reading.get("startAt")
             if not reading_date:
                 continue
-            if self._last_imported_date and reading_date <= self._last_imported_date:
-                continue
 
             try:
                 date_obj = datetime.fromisoformat(reading_date)
                 date_local = date_obj.astimezone(dt_util.DEFAULT_TIME_ZONE)
                 date_normalized = date_local.replace(hour=0, minute=0, second=0, microsecond=0)
             except (ValueError, TypeError, AttributeError):
+                continue
+
+            # Skip readings already in the DB (timezone-aware datetime comparison).
+            if last_start_dt is not None and date_normalized <= last_start_dt:
                 continue
 
             val = reading.get("value")
