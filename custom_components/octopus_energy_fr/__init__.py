@@ -48,6 +48,9 @@ class OctopusEnergyFrRuntimeData:
     intelligent_coordinator: OctopusIntelligentCoordinator | None = field(default=None)
 
 
+type OctopusEnergyFrConfigEntry = ConfigEntry[OctopusEnergyFrRuntimeData]
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register integration-level services."""
 
@@ -66,7 +69,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: OctopusEnergyFrConfigEntry
 ) -> bool:
     """Set up Octopus Energy France from a config entry."""
     email = entry.data[CONF_EMAIL]
@@ -126,7 +129,7 @@ async def async_setup_entry(
 
 
 async def async_unload_entry(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: OctopusEnergyFrConfigEntry
 ) -> bool:
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

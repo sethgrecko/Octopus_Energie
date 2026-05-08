@@ -68,6 +68,7 @@ class OctopusEnergyFrCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(minutes=scan_interval),
+            config_entry=config_entry,
         )
         self.api_client = api_client
         self.account_number = account_number
