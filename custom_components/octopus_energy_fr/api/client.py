@@ -12,7 +12,7 @@ from typing import Any
 import aiohttp
 import jwt
 
-from .const import (
+from ..const import (
     GRAPHQL_ENDPOINT,
     MAX_RETRY_ATTEMPTS,
     RETRY_DELAY,
