@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+
+  <!-- Pattes arrière -->
+  <ellipse cx="80" cy="205" rx="28" ry="14" fill="#27AE60" transform="rotate(-30 80 205)"/>
+  <ellipse cx="220" cy="205" rx="28" ry="14" fill="#27AE60" transform="rotate(30 220 205)"/>
+
+  <!-- Corps vert (sous la carapace) -->
+  <ellipse cx="150" cy="185" rx="75" ry="35" fill="#2ECC71"/>
+
+  <!-- Pattes avant -->
+  <ellipse cx="74" cy="160" rx="26" ry="13" fill="#27AE60" transform="rotate(40 74 160)"/>
+  <ellipse cx="226" cy="160" rx="26" ry="13" fill="#27AE60" transform="rotate(-40 226 160)"/>
+
+  <!-- Queue -->
+  <path d="M 88 195 Q 62 210 52 228" stroke="#27AE60" stroke-width="14" fill="none" stroke-linecap="round"/>
+
+  <!-- Carapace — fond violet Octopus -->
+  <ellipse cx="150" cy="148" rx="85" ry="72" fill="#492072"/>
+
+  <!-- Motif hexagonal sur la carapace -->
+  <!-- Hexagone central -->
+  <polygon points="150,108 176,123 176,153 150,168 124,153 124,123"
+           fill="none" stroke="#7B3FC4" stroke-width="2.5"/>
+  <!-- Hexagones autour -->
+  <polygon points="150,76 176,91 176,108 150,108 124,108 124,91"
+           fill="none" stroke="#7B3FC4" stroke-width="2"/>
+  <polygon points="176,108 202,123 202,153 176,153 176,123 176,108"
+           fill="none" stroke="#7B3FC4" stroke-width="2"/>
+  <polygon points="124,108 150,108 124,123 98,123 98,108 124,108"
+           fill="none" stroke="#7B3FC4" stroke-width="2"/>
+  <polygon points="176,153 202,153 202,168 176,168 150,168 176,153"
+           fill="none" stroke="#7B3FC4" stroke-width="2"/>
+  <polygon points="124,153 150,168 124,168 98,168 98,153 124,153"
+           fill="none" stroke="#7B3FC4" stroke-width="2"/>
+
+  <!-- Reflet rose Octopus sur la carapace -->
+  <ellipse cx="130" cy="118" rx="32" ry="18" fill="#FF00A0" opacity="0.18"/>
+
+  <!-- Bord carapace -->
+  <ellipse cx="150" cy="148" rx="85" ry="72" fill="none" stroke="#2ECC71" stroke-width="4"/>
+
+  <!-- Cou -->
+  <ellipse cx="218" cy="135" rx="18" ry="14" fill="#2ECC71"/>
+
+  <!-- Tête -->
+  <ellipse cx="245" cy="118" rx="32" ry="27" fill="#2ECC71"/>
+
+  <!-- Lunettes de soleil cool 😎 -->
+  <!-- Monture gauche -->
+  <rect x="227" y="108" width="20" height="14" rx="5" fill="#1a1a1a"/>
+  <!-- Monture droite -->
+  <rect x="251" y="108" width="20" height="14" rx="5" fill="#1a1a1a"/>
+  <!-- Pont des lunettes -->
+  <line x1="247" y1="114" x2="251" y2="114" stroke="#1a1a1a" stroke-width="2.5"/>
+  <!-- Branche gauche -->
+  <line x1="227" y1="114" x2="218" y2="116" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Reflet lunettes -->
+  <line x1="230" y1="111" x2="235" y2="111" stroke="white" stroke-width="1.5" opacity="0.7" stroke-linecap="round"/>
+  <line x1="254" y1="111" x2="259" y2="111" stroke="white" stroke-width="1.5" opacity="0.7" stroke-linecap="round"/>
+
+  <!-- Sourire cool -->
+  <path d="M 233 130 Q 244 140 256 130" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Petite flamme / éclair énergie sur la carapace -->
+  <path d="M 155 128 L 144 148 L 152 148 L 141 170 L 162 145 L 153 145 Z"
+        fill="#FF00A0" opacity="0.85"/>
+
+  <!-- Texte OCTOPUS FR en petit sous la tortue -->
+  <text x="150" y="245" font-family="Arial, sans-serif" font-size="16" font-weight="bold"
+        text-anchor="middle" fill="#492072" letter-spacing="3">OCTOPUS ⚡ FR</text>
+
+</svg>
