@@ -61,7 +61,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:calendar-month",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     # ---- Base tariff ----
@@ -71,7 +71,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:flash",
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
@@ -80,7 +80,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:currency-eur",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     SensorEntityDescription(
@@ -99,7 +99,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:flash",
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
@@ -108,7 +108,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:flash-off",
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
@@ -117,7 +117,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:currency-eur",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     SensorEntityDescription(
@@ -126,7 +126,7 @@ ELECTRICITY_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:currency-eur",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     SensorEntityDescription(
@@ -155,7 +155,7 @@ LATEST_READING_SENSOR = SensorEntityDescription(
     icon="mdi:counter",
     device_class=SensorDeviceClass.ENERGY,
     native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-    state_class=SensorStateClass.MEASUREMENT,
+    state_class=SensorStateClass.TOTAL,
     entity_category=EntityCategory.DIAGNOSTIC,
     suggested_display_precision=3,
 )
@@ -207,7 +207,7 @@ GAS_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:fire",
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
@@ -216,7 +216,7 @@ GAS_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:currency-eur",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     SensorEntityDescription(
@@ -231,7 +231,7 @@ GAS_SENSORS: list[SensorEntityDescription] = [
         icon="mdi:calendar-month",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     SensorEntityDescription(
@@ -257,7 +257,7 @@ LEDGER_SENSORS: list[OctopusLedgerSensorDescription] = [
         icon="mdi:piggy-bank-outline",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     OctopusLedgerSensorDescription(
@@ -267,7 +267,7 @@ LEDGER_SENSORS: list[OctopusLedgerSensorDescription] = [
         icon="mdi:file-document-outline",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
     OctopusLedgerSensorDescription(
@@ -277,7 +277,7 @@ LEDGER_SENSORS: list[OctopusLedgerSensorDescription] = [
         icon="mdi:file-document-outline",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
     ),
 ]
