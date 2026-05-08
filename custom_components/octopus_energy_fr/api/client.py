@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import suppress
 from datetime import UTC, datetime
+import json
 import logging
 import re
 from typing import Any
@@ -463,6 +464,12 @@ class OctopusEnergyFrApiClient:
         result = await self._execute_with_auth(QUERY_GET_ACCOUNT_DATA, variables)
         account = result.get("data", {}).get("account") or {}
 
+        _LOGGER.debug(
+            "[DUMP] RAW account GraphQL response for %s:\n%s",
+            account_number,
+            json.dumps(account, indent=2, default=str),
+        )
+
         if not account:
             _LOGGER.warning("No account data for %s", account_number)
             return {}
@@ -650,6 +657,7 @@ class OctopusEnergyFrApiClient:
 
         all_nodes: list[dict] = []
         after: str | None = None
+        page_num = 0
 
         while True:
             variables = {
@@ -664,7 +672,16 @@ class OctopusEnergyFrApiClient:
             measurements = (
                 result.get("data", {}).get("property", {}).get("measurements") or {}
             )
-            for edge in measurements.get("edges") or []:
+            edges = measurements.get("edges") or []
+
+            if page_num == 0 and edges:
+                _LOGGER.debug(
+                    "[DUMP] RAW electricity measurement sample (PRM=%s, first node of page 1):\n%s",
+                    market_supply_point_id,
+                    json.dumps(edges[0].get("node"), indent=2, default=str),
+                )
+
+            for edge in edges:
                 node = edge.get("node")
                 if node:
                     all_nodes.append(node)
@@ -673,7 +690,13 @@ class OctopusEnergyFrApiClient:
             if not page_info.get("hasNextPage"):
                 break
             after = page_info.get("endCursor")
+            page_num += 1
 
+        _LOGGER.debug(
+            "[DUMP] Electricity readings fetch complete: PRM=%s, total=%d nodes",
+            market_supply_point_id,
+            len(all_nodes),
+        )
         return all_nodes
 
     async def get_gas_readings(
@@ -687,6 +710,7 @@ class OctopusEnergyFrApiClient:
         """Fetch paged gas readings via the dedicated gasReading API."""
         all_nodes: list[dict] = []
         after: str | None = None
+        first_page = True
 
         while True:
             variables = {
@@ -699,7 +723,17 @@ class OctopusEnergyFrApiClient:
             }
             result = await self._execute_with_auth(QUERY_GET_GAS_READINGS, variables)
             gas_reading = result.get("data", {}).get("gasReading") or {}
-            for edge in gas_reading.get("edges") or []:
+            edges = gas_reading.get("edges") or []
+
+            if first_page and edges:
+                _LOGGER.debug(
+                    "[DUMP] RAW gas reading sample (PCE=%s, first node of page 1):\n%s",
+                    pce_ref,
+                    json.dumps(edges[0].get("node"), indent=2, default=str),
+                )
+                first_page = False
+
+            for edge in edges:
                 node = edge.get("node") or {}
                 all_nodes.append({
                     "value": node.get("consumption"),
@@ -716,6 +750,11 @@ class OctopusEnergyFrApiClient:
                 break
             after = page_info.get("endCursor")
 
+        _LOGGER.debug(
+            "[DUMP] Gas readings fetch complete: PCE=%s, total=%d nodes",
+            pce_ref,
+            len(all_nodes),
+        )
         return all_nodes
 
     async def get_electricity_index(
@@ -729,6 +768,11 @@ class OctopusEnergyFrApiClient:
             {"accountNumber": account_number, "prmId": prm_id},
         )
         edges = (result.get("data", {}).get("electricityReading") or {}).get("edges") or []
+        _LOGGER.debug(
+            "[DUMP] RAW electricity index (PRM=%s):\n%s",
+            prm_id,
+            json.dumps(edges, indent=2, default=str),
+        )
         if not edges:
             return None
 

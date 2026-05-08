@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+import json
 import logging
 from typing import Any
 
@@ -163,12 +164,48 @@ class OctopusEnergyFrCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Keep supply_points with only active electricity meters
         account_data["supply_points"]["electricity"] = elec_meters
 
-        return {
+        assembled = {
             **account_data,
             "electricity": electricity,
             "gas": gas,
             "payment_requests": payment_requests,
         }
+
+        _LOGGER.debug(
+            "[DUMP] Full coordinator data structure for account %s:\n%s",
+            self.account_number,
+            json.dumps(
+                {
+                    "account_id": assembled.get("account_id"),
+                    "account_number": assembled.get("account_number"),
+                    "ledgers": assembled.get("ledgers"),
+                    "supply_points": assembled.get("supply_points"),
+                    "agreements": assembled.get("agreements"),
+                    "electricity_prms": {
+                        prm: {
+                            "readings_count": len(data.get("readings") or []),
+                            "latest_reading": (data.get("readings") or [{}])[-1] if data.get("readings") else None,
+                            "index": data.get("index"),
+                            "tariffs": data.get("tariffs"),
+                        }
+                        for prm, data in assembled.get("electricity", {}).items()
+                    },
+                    "gas_pces": {
+                        pce: {
+                            "readings_count": len(data.get("readings") or []),
+                            "latest_reading": (data.get("readings") or [{}])[-1] if data.get("readings") else None,
+                            "tariffs": data.get("tariffs"),
+                        }
+                        for pce, data in assembled.get("gas", {}).items()
+                    },
+                    "payment_requests": assembled.get("payment_requests"),
+                },
+                indent=2,
+                default=str,
+            ),
+        )
+
+        return assembled
 
     async def _fetch_electricity_meter(
         self,
