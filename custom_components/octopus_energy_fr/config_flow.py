@@ -8,7 +8,6 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -30,7 +29,6 @@ class OctopusEnergyFrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Octopus Energy France."""
 
     VERSION = 1
-    MINOR_VERSION = 1
 
     def __init__(self) -> None:
         self._email: str = ""
@@ -38,9 +36,7 @@ class OctopusEnergyFrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._accounts: list[dict] = []
         self._api_client: OctopusEnergyFrApiClient | None = None
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -87,9 +83,7 @@ class OctopusEnergyFrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_account(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_account(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             account_number = user_input[CONF_ACCOUNT_NUMBER]
             await self.async_set_unique_id(account_number)
@@ -105,16 +99,17 @@ class OctopusEnergyFrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }),
         )
 
-    async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: dict[str, Any]):
         return await self.async_step_reauth_confirm()
 
-    async def async_step_reauth_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
-        reauth_entry = self._get_reauth_entry()
+
+        # Compatible HA 2023.x et 2024.x
+        entry_id = self.context.get("entry_id")
+        reauth_entry = self.hass.config_entries.async_get_entry(entry_id)
+        if reauth_entry is None:
+            return self.async_abort(reason="reauth_failed")
 
         if user_input is not None:
             client = OctopusEnergyFrApiClient(
@@ -124,10 +119,12 @@ class OctopusEnergyFrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             try:
                 if await client.authenticate():
-                    return self.async_update_reload_and_abort(
+                    self.hass.config_entries.async_update_entry(
                         reauth_entry,
-                        data_updates={CONF_PASSWORD: user_input[CONF_PASSWORD]},
+                        data={**reauth_entry.data, CONF_PASSWORD: user_input[CONF_PASSWORD]},
                     )
+                    await self.hass.config_entries.async_reload(reauth_entry.entry_id)
+                    return self.async_abort(reason="reauth_successful")
                 errors["base"] = "invalid_auth"
             except Exception:
                 errors["base"] = "cannot_connect"
@@ -139,9 +136,7 @@ class OctopusEnergyFrConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"email": reauth_entry.data.get(CONF_EMAIL, "")},
         )
 
-    def _create_entry(
-        self, account_number: str, form_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    def _create_entry(self, account_number: str, form_data: dict[str, Any]):
         return self.async_create_entry(
             title=f"Octopus Energy France — {account_number}",
             data={
@@ -164,9 +159,7 @@ class OctopusEnergyFrOptionsFlow(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         self._config_entry = config_entry
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
